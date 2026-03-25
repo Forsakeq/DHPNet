@@ -5,7 +5,7 @@ The implementation and resource release for **DHP**.
 > This repository provides the pretrained model, required pretrained backbone, and preprocessed auxiliary files for inference / evaluation / reproduction.
 
 
-## 📌 Overview
+## Overview
 
 This repository contains the implementation and resources for **DHP**, including:
 
@@ -18,7 +18,7 @@ If you use this repository in your research, please cite our work.
 
 ---
 
-## 📂 Released Files
+## Released Files
 
 The following files are provided for reproduction:
 
