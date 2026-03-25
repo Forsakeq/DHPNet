@@ -1,6 +1,6 @@
-# DHP
+# DHPNet
 
-Official implementation and resource release for **DHP**.
+The implementation and resource release for **DHP**.
 
 > This repository provides the pretrained model, required pretrained backbone, and preprocessed auxiliary files for inference / evaluation / reproduction.
 
