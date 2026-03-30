@@ -1,12 +1,3 @@
-# train_dhp_net_backbone_warmup.py
-# ------------------------------------------------------------
-# Warmup 方案A：冻 backbone（RGB/FS Swin + MDFE encoder），训练其它所有模块
-#   - 包含：decoder/预测头 + 所有 gating（slice_gating / omega / g_pos/g_neg 等）
-#   - 目的：保证预测头能产生有效监督信号，gating 才“有梯度可学”。
-# 其它部分保持不变（loss / dataloader / eval / 优化器分组 / 训练流程）。
-# ------------------------------------------------------------
-
-
 import os
 import sys
 import time
@@ -120,9 +111,6 @@ def fs_to_bs3hw(fs: torch.Tensor, num_slices: int = None):
     raise ValueError(f"Unsupported fs shape: {fs.shape}")
 
 
-# -----------------------------
-# AdamW param grouping (no weight decay on bias/norm/1D/gate scalars)
-# -----------------------------
 def build_adamw_param_groups(model: torch.nn.Module, weight_decay: float):
     decay = []
     no_decay = []
@@ -141,13 +129,6 @@ def build_adamw_param_groups(model: torch.nn.Module, weight_decay: float):
 
 
 
-
-# -----------------------------
-# Warmup 方案A：冻 backbone（但训练其它所有模块）
-#   - 前 gating_warm_epochs：冻结 backbone_rgb/backbone_fs/mdfe_encoder
-#   - 之后：恢复全量端到端训练
-# 说明：为了尽量少改动，仍保留 gating_train_keywords 参数，但 warmup 逻辑不再依赖它。
-# -----------------------------
 def _split_keywords(s: str):
     if s is None:
         return []
@@ -164,21 +145,14 @@ def apply_gating_warmup_requires_grad(model: torch.nn.Module,
                                      warm_epochs: int,
                                      keywords,
                                      freeze_bn: bool = True):
-    """
-    方案A：warmup 期间只冻结 backbone，其它全部训练。
-    Returns:
-      warm_on (bool), trainable_params (int), total_params (int)
-    """
     total_params = 0
     trainable_params = 0
 
     warm_on = (warm_epochs is not None) and (int(warm_epochs) > 0) and (epoch < int(warm_epochs))
     if warm_on:
-        # 1) default: enable all
         for p in model.parameters():
             p.requires_grad = True
 
-        # 2) freeze backbones by name prefix
         backbone_prefixes = ("backbone_rgb.", "backbone_fs.", "mdfe_encoder.")
         for name, p in model.named_parameters():
             total_params += p.numel()
@@ -187,7 +161,6 @@ def apply_gating_warmup_requires_grad(model: torch.nn.Module,
             if p.requires_grad:
                 trainable_params += p.numel()
 
-        # 3) put frozen backbones to eval to disable dropout/stochastic depth
         if hasattr(model, "backbone_rgb"):
             model.backbone_rgb.eval()
         if hasattr(model, "backbone_fs"):
@@ -195,7 +168,6 @@ def apply_gating_warmup_requires_grad(model: torch.nn.Module,
         if hasattr(model, "mdfe_encoder"):
             model.mdfe_encoder.eval()
 
-        # BN: keep in eval if you have BN layers (your current net基本没有BN，但保留兼容)
         if freeze_bn:
             for m in model.modules():
                 if isinstance(m, (torch.nn.BatchNorm2d, torch.nn.SyncBatchNorm)):
@@ -209,9 +181,6 @@ def apply_gating_warmup_requires_grad(model: torch.nn.Module,
     return warm_on, trainable_params, total_params
 
 
-# -----------------------------
-# Eval: 输出 MAE
-# -----------------------------
 @torch.no_grad()
 def evaluate(args, model, datasets, device):
     model.eval()
@@ -242,9 +211,6 @@ def evaluate(args, model, datasets, device):
     return float(np.mean(maes))
 
 
-# -----------------------------
-# Train
-# -----------------------------
 def train(args, model, train_loader, device, optimizer, scheduler, writer):
     best_mae = 1e9
     best_epoch = -1
@@ -255,8 +221,7 @@ def train(args, model, train_loader, device, optimizer, scheduler, writer):
     for epoch in range(args.epochs):
         model.train()
 
-        # ----------------- Warmup(A): freeze backbone only -----------------
-        warm_kw = _split_keywords(args.gating_train_keywords)  # 保留原参数（warmup逻辑不再依赖它）
+        warm_kw = _split_keywords(args.gating_train_keywords)
         warm_on, n_tr, n_all = apply_gating_warmup_requires_grad(
             model, epoch=epoch, warm_epochs=args.gating_warm_epochs,
             keywords=warm_kw, freeze_bn=args.gating_warm_freeze_bn
@@ -272,10 +237,9 @@ def train(args, model, train_loader, device, optimizer, scheduler, writer):
         running = 0.0
         t0 = time.time()
 
-        # --------- omega: learnable scale (no omega_max warmup) ---------
         cur_om = args.omega_max
 
-        # edge loss 权重调度（可选，但建议保留这个杠杆）
+
         edge_w = args.edge_loss_weight_after if epoch >= args.edge_weight_after_epoch else args.edge_loss_weight_before
 
         for it, (allfocus, fs, depth, gt, contour, names) in enumerate(train_loader):
