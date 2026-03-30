@@ -1,20 +1,3 @@
-# DHP-Net.py
-# ------------------------------------------------------------
-# Your DHP-Net (MHFF-based) with:
-#   - MIRF: MIRFFusionStage (main branch)
-#   - DINF: DINFFusionStage (aux branch)
-#   - MHFF (MHFFFusionStage): omega gate with **learnable omega_scale**
-#       omega = sigmoid(omega_logits) * sigmoid(omega_scale_logit)
-#       -> omega in (0, 1), and omega_scale is trained (no fixed omega_max clamp)
-#   - ERA head: MS learnable Gaussian aggregation (MS-EGA-like)
-#
-# NOTE:
-#   This file keeps the network functionality the same EXCEPT the omega_max clamp:
-#   - previously: omega in [0, omega_max] (omega_max fixed float)
-#   - now:        omega in (0, 1) with a learnable scale parameter
-#
-# ------------------------------------------------------------
-
 import os
 import math
 
@@ -266,9 +249,6 @@ class ERA_MS_EGA(nn.Module):
 
 
 
-# ============================================================
-# Init Helpers
-# ============================================================
 def initialize_weights(net_l, scale=0.1):
     if not isinstance(net_l, list):
         net_l = [net_l]
@@ -339,7 +319,7 @@ class ResidualBlock_noBN(nn.Module):
 
 
 # ============================================================
-# Depth Branch: MDFE (UNCHANGED LOGIC)
+# MDFE
 # ============================================================
 class MDFEBlock(nn.Module):
     def __init__(self, in_ch, out_ch):
@@ -404,7 +384,7 @@ class MDFEEncoder(nn.Module):
 
 
 # ============================================================
-# MIRF: main fusion branch
+# MIRF
 # ============================================================
 class MIRFCore(nn.Module):
     def __init__(self, nf=96):
@@ -644,7 +624,7 @@ class MIRFFusionStage(nn.Module):
 
 
 # ============================================================
-# DINF: auxiliary fusion branch (2-mod)
+# DINF
 # ============================================================
 class GatedDWFFN(nn.Module):
     def __init__(self, dim, expansion=2.0, bias=True):
@@ -914,7 +894,7 @@ class DINFFusionStage(nn.Module):
 
 
 # ============================================================
-# MHFF Fusion Stage: MIRF(main) + DINF(aux) + omega gate (omega_scale is trainable)
+# MHFF Fusion Stage: MIRF + DINF + omega gate
 # ============================================================
 class MHFFFusionStage(nn.Module):
     """
@@ -1016,7 +996,7 @@ class MHFFFusionStage(nn.Module):
 
 
 # ============================================================
-# DHPNet (H2 fusion)
+# DHPNet
 # ============================================================
 class DHPNet(nn.Module):
     def __init__(self, backbone_type='swin',
@@ -1211,9 +1191,6 @@ class DHPNet(nn.Module):
         return pred, contour, coarse
 
 
-# ============================================================
-# init_weights (keep your style)
-# ============================================================
 def init_weights(m):
     if isinstance(m, nn.Linear):
         trunc_normal_(m.weight, std=.02)
