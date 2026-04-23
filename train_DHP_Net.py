@@ -336,14 +336,13 @@ def parse_args():
     p.add_argument("--cuda", type=str, default="0")
 
     # data
-    p.add_argument("--train_data_location", type=str, default="./data/train/DUTLF-FS/")
+    p.add_argument("--train_data_location", type=str, default="./data/train/DUTLF-V2/")
     p.add_argument("--eval_data_location", type=str, default="./data/test/")
-    p.add_argument("--eval_dataset", nargs="+", default=["DUTLF-FS"])
+    p.add_argument("--eval_dataset", nargs="+", default=["DUTLF-V2"])
     p.add_argument("--image_size", type=int, default=224)
     p.add_argument("--batch_size", type=int, default=1)
     p.add_argument("--num_worker", type=int, default=0)
 
-    # model (H2)
     p.add_argument("--num_slices", type=int, default=12)
     p.add_argument("--ffn_expansion", type=float, default=2.0)
     p.add_argument("--enable_parallel_when_reso_ge", type=int, default=28)
@@ -351,13 +350,9 @@ def parse_args():
     p.add_argument("--omega_max", type=float, default=0.3)
     p.add_argument("--omega_warmup_epochs", type=int, default=15)
 
-    # Warmup(A): freeze backbone only
-    p.add_argument("--gating_warm_epochs", type=int, default=10,
-                   help=">0 时启用：前 N 个 epoch 冻结 backbone（RGB/FS/Depth），训练其它所有模块")
-    p.add_argument("--gating_train_keywords", type=str, default="slice_gating",
-                   help="(兼容保留) warmup A 不依赖该参数；端到端阶段也不会用到。")
-    p.add_argument("--gating_warm_freeze_bn", action="store_false", default=True,
-                   help="关闭 warmup 期间 BN=eval（你的模型基本无BN，可忽略）")
+    p.add_argument("--gating_warm_epochs", type=int, default=10)
+    p.add_argument("--gating_train_keywords", type=str, default="slice_gating")
+    p.add_argument("--gating_warm_freeze_bn", action="store_false", default=True)
 
     # optim
     p.add_argument("--epochs", type=int, default=200)
@@ -381,8 +376,7 @@ def parse_args():
     p.add_argument("--focal_alpha", type=float, default=0.25)
 
     # optional regularization
-    p.add_argument("--entropy_lambda", type=float, default=0.0,
-                   help=">0 时启用：对 aux.u_f 做最大化（loss -= lam*u_f_mean）")
+    p.add_argument("--entropy_lambda", type=float, default=0.0)
 
     # saving
     p.add_argument("--save_after", type=int, default=0)
