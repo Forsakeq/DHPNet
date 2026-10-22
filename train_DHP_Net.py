@@ -343,41 +343,6 @@ def parse_args():
     p.add_argument("--batch_size", type=int, default=1)
     p.add_argument("--num_worker", type=int, default=0)
 
-    p.add_argument("--num_slices", type=int, default=12)
-    p.add_argument("--ffn_expansion", type=float, default=2.0)
-    p.add_argument("--enable_parallel_when_reso_ge", type=int, default=28)
-    p.add_argument("--omega_init_bias", type=float, default=-2.0)
-    p.add_argument("--omega_max", type=float, default=0.3)
-    p.add_argument("--omega_warmup_epochs", type=int, default=15)
-
-    p.add_argument("--gating_warm_epochs", type=int, default=10)
-    p.add_argument("--gating_train_keywords", type=str, default="slice_gating")
-    p.add_argument("--gating_warm_freeze_bn", action="store_false", default=True)
-
-    # optim
-    p.add_argument("--epochs", type=int, default=200)
-    p.add_argument("--lr", type=float, default=5e-5)
-    p.add_argument("--weight_decay", type=float, default=1e-4)
-    p.add_argument("--min_lr", type=float, default=1e-7)
-    p.add_argument("--grad_clip", type=float, default=0.5)
-
-    # misc
-    p.add_argument("--accum_steps", type=int, default=4)
-    p.add_argument("--print_freq", type=int, default=20)
-    p.add_argument("--use_amp", action="store_true", default=False)
-
-    # edge loss schedule
-    p.add_argument("--edge_weight_after_epoch", type=int, default=120)
-    p.add_argument("--edge_loss_weight_before", type=float, default=1.0)
-    p.add_argument("--edge_loss_weight_after", type=float, default=1.3)
-
-    # focal params for contour
-    p.add_argument("--focal_gamma", type=float, default=2.0)
-    p.add_argument("--focal_alpha", type=float, default=0.25)
-
-    # optional regularization
-    p.add_argument("--entropy_lambda", type=float, default=0.0)
-
     # saving
     p.add_argument("--save_after", type=int, default=0)
     p.add_argument("--save_every", type=int, default=2)
